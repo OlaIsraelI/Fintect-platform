@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     const reference = `FT-${Date.now().toString().slice(-8)}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     // Create transaction and update balances
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const updatedSender = await tx.wallet.update({
         where: { id: senderWallet.id },
         data: { balance: { decrement: amount } },
