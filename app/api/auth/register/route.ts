@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { hashPassword, generateToken } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/email";
 import crypto from "crypto";
@@ -25,6 +24,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { prisma } = await import("@/lib/prisma");
+
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Generate verification token
     const verificationToken = crypto.randomBytes(32).toString("hex");
-    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     // Create user with verification token
     const user = await prisma.user.create({
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send verification email (non-blocking)
+    // Send verification email
     try {
       await sendVerificationEmail(
         user.email,
@@ -79,7 +80,6 @@ export async function POST(request: NextRequest) {
       );
     } catch (emailError) {
       console.error("Failed to send verification email:", emailError);
-      // Continue with registration even if email fails
     }
 
     // Generate JWT token

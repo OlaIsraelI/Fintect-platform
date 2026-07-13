@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { comparePassword, generateToken } from "@/lib/auth";
 
 const serializeWallet = (wallet: any) =>
@@ -21,6 +20,8 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    const { prisma } = await import("@/lib/prisma");
 
     // Find user by email
     const user = await prisma.user.findUnique({

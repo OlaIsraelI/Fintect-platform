@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { getWalletByUserId } from "@/lib/transaction";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +15,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const wallet = await getWalletByUserId(decoded.userId);
+    const { prisma } = await import("@/lib/prisma");
+
+    const wallet = await prisma.wallet.findUnique({
+      where: { userId: decoded.userId },
+    });
 
     if (!wallet) {
       return NextResponse.json({ error: "Wallet not found" }, { status: 404 });
