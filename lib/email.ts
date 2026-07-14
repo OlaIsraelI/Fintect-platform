@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 interface EmailOptions {
   to: string;
@@ -11,6 +12,11 @@ interface EmailOptions {
 
 export async function sendEmail({ to, subject, html, from }: EmailOptions) {
   try {
+    if (!resend) {
+      console.warn(`Email skipped for ${to}: RESEND_API_KEY is not configured`);
+      return { success: false, skipped: true };
+    }
+
     const result = await resend.emails.send({
       from: from || process.env.EMAIL_FROM || "onboarding@resend.dev",
       to,
@@ -18,7 +24,12 @@ export async function sendEmail({ to, subject, html, from }: EmailOptions) {
       html,
     });
 
-    console.log(`✅ Email sent to ${to}:`, result);
+    if (result.error) {
+      console.warn(`Email failed for ${to}:`, result.error);
+      return { success: false, error: result.error };
+    }
+
+    console.log(`✅ Email sent to ${to}`);
     return { success: true, data: result };
   } catch (error) {
     console.error("❌ Email sending failed:", error);

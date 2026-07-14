@@ -4,7 +4,7 @@ const DEFAULT_TTL = 300; // 5 minutes
 
 export async function getCache<T>(key: string): Promise<T | null> {
   try {
-    if (!redis) {
+    if (!redis || redis.status !== "ready") {
       return null;
     }
     const data = await redis.get(key);
@@ -22,7 +22,7 @@ export async function setCache<T>(
   ttl: number = DEFAULT_TTL,
 ): Promise<void> {
   try {
-    if (!redis) {
+    if (!redis || redis.status !== "ready") {
       return;
     }
     await redis.set(key, JSON.stringify(data), "EX", ttl);
@@ -33,7 +33,7 @@ export async function setCache<T>(
 
 export async function deleteCache(key: string): Promise<void> {
   try {
-    if (!redis) {
+    if (!redis || redis.status !== "ready") {
       return;
     }
     await redis.del(key);
@@ -44,7 +44,7 @@ export async function deleteCache(key: string): Promise<void> {
 
 export async function deleteCachePattern(pattern: string): Promise<void> {
   try {
-    if (!redis) {
+    if (!redis || redis.status !== "ready") {
       return;
     }
     const keys = await redis.keys(pattern);
