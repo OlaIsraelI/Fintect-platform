@@ -17,6 +17,15 @@ export async function rateLimit(
   const resetTime = currentTime + windowSeconds;
 
   try {
+    if (!redis) {
+      return {
+        success: true,
+        limit,
+        remaining: limit,
+        reset: resetTime,
+      };
+    }
+
     const currentCount = await redis.incr(key);
 
     if (currentCount === 1) {

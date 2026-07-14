@@ -168,6 +168,58 @@ export async function transferFunds(
   return result;
 }
 
+export async function withdrawFunds(
+  userId: string,
+  amount: number,
+  description?: string,
+) {
+  if (amount <= 0) {
+    throw new Error("Amount must be greater than 0");
+  }
+
+  const wallet = await getWalletByUserId(userId);
+  if (!wallet) {
+    throw new Error("Wallet not found");
+  }
+
+  if (Number(wallet.balance) < amount) {
+    throw new Error("Insufficient balance");
+  }
+
+  const reference = await generateReference();
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedWallet = await tx.wallet.update({
+      where: { id: wallet.id },
+      data: {
+        balance: {
+          decrement: amount,
+        },
+      },
+    });
+
+    const transaction = await tx.transaction.create({
+      data: {
+        reference,
+        senderWalletId: wallet.id,
+        amount,
+        fee: 0,
+        type: "withdrawal",
+        status: "completed",
+        description: description || "Withdrawal",
+        senderId: userId,
+        completedAt: new Date(),
+      },
+    });
+
+    return { transaction, updatedWallet };
+  });
+
+  await deleteCache(generateCacheKey("wallet", userId));
+
+  return result;
+}
+
 export async function getTransactionHistory(
   userId: string,
   page: number = 1,

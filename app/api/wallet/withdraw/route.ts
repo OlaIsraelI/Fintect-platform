@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { transferFunds } from "@/lib/transaction";
+import { withdrawFunds } from "@/lib/transaction";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,14 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { receiverAccountNumber, amount, description } = body;
-
-    if (!receiverAccountNumber) {
-      return NextResponse.json(
-        { error: "Receiver account number is required" },
-        { status: 400 },
-      );
-    }
+    const { amount, description } = body;
 
     if (!amount || amount <= 0) {
       return NextResponse.json(
@@ -33,25 +26,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await transferFunds(
-      decoded.userId,
-      receiverAccountNumber,
-      amount,
-      description,
-    );
+    const result = await withdrawFunds(decoded.userId, amount, description);
 
     return NextResponse.json({
-      message: "Transfer successful",
+      message: "Withdrawal successful",
       data: {
         transaction: result.transaction,
-        newBalance: Number(result.updatedSender.balance),
+        newBalance: Number(result.updatedWallet.balance),
       },
     });
-  } catch (error: any) {
-    console.error("Transfer error:", error);
-    return NextResponse.json(
-      { error: error.message || "Transfer failed" },
-      { status: 500 },
-    );
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Withdrawal failed";
+    console.error("Withdraw error:", error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
