@@ -22,6 +22,26 @@ model User {
   twoFactorSecret   String?
   twoFactorEnabled  Boolean           @default(false)
   lastLoginAt       DateTime?
+  
+  // KYC Fields
+  kycStatus         String            @default("pending")
+  kycSubmittedAt    DateTime?
+  kycVerifiedAt     DateTime?
+  kycRejectedAt     DateTime?
+  kycRejectionReason String?
+  
+  // Profile Fields
+  bio               String?
+  profilePicture    String?
+  dateOfBirth       DateTime?
+  address           String?
+  city              String?
+  state             String?
+  country           String?
+  postalCode        String?
+  
+  // Relations
+  documents         Document[]
   refreshTokens     RefreshToken[]
   wallet            Wallet?
   bankAccounts      BankAccount[]
@@ -33,6 +53,24 @@ model User {
   updatedAt         DateTime          @updatedAt
 
   @@map("users")
+}
+
+model Document {
+  id                String            @id @default(uuid())
+  userId            String
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  documentNumber    String?
+  issuingCountry    String?
+  expiryDate        DateTime?
+  frontImage        String
+  backImage         String?
+  status            String            @default("pending")
+  rejectionReason   String?
+  submittedAt       DateTime          @default(now())
+  verifiedAt        DateTime?
+  
+  @@map("documents")
 }
 
 model Wallet {
