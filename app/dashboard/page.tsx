@@ -20,16 +20,22 @@ export default function DashboardPage() {
   const [transferSuccess, setTransferSuccess] = useState("");
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (!userData) {
+    try {
+      const userData = localStorage.getItem("user");
+      if (!userData) {
+        router.push("/auth/login");
+        return;
+      }
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+      setAccountNumber(parsedUser.wallet?.accountNumber || "");
+      fetchBalance();
+      fetchTransactions();
+    } catch (error) {
+      console.error("Failed to parse user data:", error);
+      localStorage.removeItem("user");
       router.push("/auth/login");
-      return;
     }
-    const parsedUser = JSON.parse(userData);
-    setUser(parsedUser);
-    setAccountNumber(parsedUser.wallet?.accountNumber || "");
-    fetchBalance();
-    fetchTransactions();
   }, [router]);
 
   const fetchBalance = async () => {

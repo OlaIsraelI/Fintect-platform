@@ -94,7 +94,8 @@ export async function sendPasswordResetEmail(
   token: string,
   name: string,
 ) {
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/reset-password?token=${token}`;
+  // FIXED: Changed from /api/auth/reset-password to /auth/reset-password
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/reset-password?token=${token}`;
 
   console.log("🔗 Password reset link:", resetUrl);
 
@@ -130,7 +131,8 @@ export async function sendPasswordResetEmail(
             <p>&copy; ${new Date().getFullYear()} FinTech Platform. All rights reserved.</p>
           </div>
         </div>
-      </html>
+      </body>
+    </html>
   `;
 
   return sendEmail({

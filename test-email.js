@@ -1,7 +1,7 @@
 const { Resend } = require("resend");
 
 // Replace with your actual API key
-const resend = new Resend("....................");
+const resend = new Resend(".................................");
 
 async function sendTestEmail() {
   try {
