@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { uploadFields } from "@/lib/upload";
-import { runMiddleware } from "@/lib/middleware";
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,43 +1,54 @@
-import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from 'next/server'
+import { verifyToken } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
-const prisma = new PrismaClient();
-
-async function createWalletsForExistingUsers() {
+export async function POST(request: NextRequest) {
   try {
-    // Find all users without wallets
-    const users = await prisma.user.findMany({
+    const token = request.cookies.get('token')?.value
+    
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const decoded = verifyToken(token)
+    if (!decoded?.userId) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    // Get all users without wallets
+    const usersWithoutWallets = await prisma.user.findMany({
       where: {
-        wallet: null,
-      },
-    });
+        wallet: null
+      }
+    })
 
-    console.log(`Found ${users.length} users without wallets`);
+    console.log(`Found ${usersWithoutWallets.length} users without wallets`)
 
-    let created = 0;
-    for (const user of users) {
+    let created = 0
+    for (const user of usersWithoutWallets) {
       const wallet = await prisma.wallet.create({
         data: {
           userId: user.id,
           balance: 0,
-          accountNumber: Math.floor(
-            1000000000 + Math.random() * 9000000000,
-          ).toString(),
-          currency: "NGN",
-          status: "active",
-        },
-      });
-      created++;
-      console.log(
-        `✅ Created wallet for ${user.email}: ${wallet.accountNumber}`,
-      );
+          accountNumber: Math.floor(1000000000 + Math.random() * 9000000000).toString(),
+          currency: 'NGN',
+          status: 'active'
+        }
+      })
+      created++
+      console.log(`Created wallet for ${user.email}: ${wallet.accountNumber}`)
     }
 
-    console.log(`✅ Created ${created} wallets`);
+    return NextResponse.json({
+      message: `Created ${created} wallets`,
+      created
+    })
+
   } catch (error) {
-    console.error("Error:", error);
-  } finally {
-    await prisma.$disconnect();
+    console.error('Create all wallets error:', error)
+    return NextResponse.json(
+      { error: 'Failed to create wallets' },
+      { status: 500 }
+    )
   }
 }
-
-createWalletsForExistingUsers();

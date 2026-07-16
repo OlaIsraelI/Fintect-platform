@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hashPassword, generateToken } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/email";
 import crypto from "crypto";
+import { prisma } from "@/lib/prisma";
 
 const serializeWallet = (wallet: any) =>
   wallet
@@ -24,8 +25,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { prisma } = await import("@/lib/prisma");
-
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -47,7 +46,7 @@ export async function POST(request: NextRequest) {
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // Create user with verification token
+    // Create user with wallet
     const user = await prisma.user.create({
       data: {
         email,
@@ -71,7 +70,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send verification email
+    // Send verification email (non-blocking)
     try {
       await sendVerificationEmail(
         user.email,
