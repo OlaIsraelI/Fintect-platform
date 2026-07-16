@@ -23,14 +23,14 @@ model User {
   twoFactorEnabled  Boolean           @default(false)
   lastLoginAt       DateTime?
   
-  // KYC Fields
+  // KYC
   kycStatus         String            @default("pending")
   kycSubmittedAt    DateTime?
   kycVerifiedAt     DateTime?
   kycRejectedAt     DateTime?
   kycRejectionReason String?
   
-  // Profile Fields
+  // Profile
   bio               String?
   profilePicture    String?
   dateOfBirth       DateTime?
@@ -40,14 +40,14 @@ model User {
   country           String?
   postalCode        String?
   
-  // Relationships
+  // Relations
   documents         Document[]
   refreshTokens     RefreshToken[]
   wallet            Wallet?
   bankAccounts      BankAccount[]
   beneficiaries     Beneficiary[]
-  deposits          Deposit[]
-  withdrawals       Withdrawal[]
+  deposits          Deposit[]         @relation("UserDeposits")
+  withdrawals       Withdrawal[]      @relation("UserWithdrawals")
   sentTransactions  Transaction[]     @relation("sender")
   receivedTransactions Transaction[]  @relation("receiver")
   auditLogs         AuditLog[]
@@ -94,12 +94,12 @@ model Wallet {
 model Deposit {
   id                String            @id @default(uuid())
   userId            String
-  user              User              @relation(fields: [userId], references: [id])
+  user              User              @relation("UserDeposits", fields: [userId], references: [id])
   amount            Decimal
   reference         String            @unique
-  status            String            @default("pending") // pending, processing, completed, failed, cancelled
-  paymentMethod     String            // bank_transfer, card, paystack, flutterwave, manual
-  externalTransactionId String?       // External gateway transaction ID
+  status            String            @default("pending")
+  paymentMethod     String
+  externalTransactionId String?
   bankName          String?
   accountNumber     String?
   accountName       String?
@@ -108,9 +108,6 @@ model Deposit {
   completedAt       DateTime?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
-
-  // Reverse relation to Transaction (this is the opposite side)
-  transaction       Transaction?      @relation("DepositTransaction")
 
   @@index([userId])
   @@index([status])
@@ -121,11 +118,11 @@ model Deposit {
 model Withdrawal {
   id                String            @id @default(uuid())
   userId            String
-  user              User              @relation(fields: [userId], references: [id])
+  user              User              @relation("UserWithdrawals", fields: [userId], references: [id])
   amount            Decimal
   fee               Decimal           @default(0)
   reference         String            @unique
-  status            String            @default("pending") // pending, processing, completed, failed, cancelled
+  status            String            @default("pending")
   bankAccountId     String?
   bankAccount       BankAccount?      @relation(fields: [bankAccountId], references: [id])
   bankName          String
@@ -136,9 +133,6 @@ model Withdrawal {
   completedAt       DateTime?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
-
-  // Reverse relation to Transaction (opposite side)
-  transaction       Transaction?      @relation("WithdrawalTransaction")
 
   @@index([userId])
   @@index([status])
@@ -155,7 +149,7 @@ model Transaction {
   receiverWallet    Wallet?           @relation("receiverWallet", fields: [receiverWalletId], references: [id])
   amount            Decimal
   fee               Decimal           @default(0)
-  type              String            // deposit, withdrawal, transfer, payment
+  type              String
   status            String            @default("pending")
   description       String?
   metadata          Json?
@@ -165,14 +159,6 @@ model Transaction {
   receiver          User?             @relation("receiver", fields: [receiverId], references: [id])
   senderId          String?
   receiverId        String?
-  
-  // Foreign keys to Deposit/Withdrawal (these are the owning sides)
-  depositId         String?           @unique
-  deposit           Deposit?          @relation("DepositTransaction", fields: [depositId], references: [id])
-  
-  withdrawalId      String?           @unique
-  withdrawal        Withdrawal?       @relation("WithdrawalTransaction", fields: [withdrawalId], references: [id])
-  
   createdAt         DateTime          @default(now())
 
   @@index([senderWalletId])

@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Confirm deposit and update wallet
+    // Confirm deposit
     const deposit = await prisma.$transaction(async (tx) => {
       const dep = await tx.deposit.update({
         where: { reference },
@@ -56,10 +56,10 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Create transaction record
+      // ✅ Create transaction record WITHOUT depositId
       await tx.transaction.create({
         data: {
-          reference: `DEP-${Date.now()}`,
+          reference: `TXN-${Date.now()}`,
           receiverWalletId: dep.userId,
           amount: dep.amount,
           fee: 0,
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
           description: `Deposit via ${dep.paymentMethod}`,
           completedAt: new Date(),
           receiverId: dep.userId,
-          depositId: dep.id,
+          // ❌ depositId removed (field doesn't exist)
         },
       });
 
