@@ -40,12 +40,14 @@ model User {
   country           String?
   postalCode        String?
   
-  // Relations
+  // Relationships
   documents         Document[]
   refreshTokens     RefreshToken[]
   wallet            Wallet?
   bankAccounts      BankAccount[]
   beneficiaries     Beneficiary[]
+  deposits          Deposit[]
+  withdrawals       Withdrawal[]
   sentTransactions  Transaction[]     @relation("sender")
   receivedTransactions Transaction[]  @relation("receiver")
   auditLogs         AuditLog[]
@@ -89,6 +91,61 @@ model Wallet {
   @@map("wallets")
 }
 
+model Deposit {
+  id                String            @id @default(uuid())
+  userId            String
+  user              User              @relation(fields: [userId], references: [id])
+  amount            Decimal
+  reference         String            @unique
+  status            String            @default("pending") // pending, processing, completed, failed, cancelled
+  paymentMethod     String            // bank_transfer, card, paystack, flutterwave, manual
+  externalTransactionId String?       // External gateway transaction ID
+  bankName          String?
+  accountNumber     String?
+  accountName       String?
+  proofImage        String?
+  notes             String?
+  completedAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Reverse relation to Transaction (this is the opposite side)
+  transaction       Transaction?      @relation("DepositTransaction")
+
+  @@index([userId])
+  @@index([status])
+  @@index([reference])
+  @@map("deposits")
+}
+
+model Withdrawal {
+  id                String            @id @default(uuid())
+  userId            String
+  user              User              @relation(fields: [userId], references: [id])
+  amount            Decimal
+  fee               Decimal           @default(0)
+  reference         String            @unique
+  status            String            @default("pending") // pending, processing, completed, failed, cancelled
+  bankAccountId     String?
+  bankAccount       BankAccount?      @relation(fields: [bankAccountId], references: [id])
+  bankName          String
+  accountNumber     String
+  accountName       String
+  externalTransactionId String?
+  notes             String?
+  completedAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Reverse relation to Transaction (opposite side)
+  transaction       Transaction?      @relation("WithdrawalTransaction")
+
+  @@index([userId])
+  @@index([status])
+  @@index([reference])
+  @@map("withdrawals")
+}
+
 model Transaction {
   id                String            @id @default(uuid())
   reference         String            @unique
@@ -98,7 +155,7 @@ model Transaction {
   receiverWallet    Wallet?           @relation("receiverWallet", fields: [receiverWalletId], references: [id])
   amount            Decimal
   fee               Decimal           @default(0)
-  type              String
+  type              String            // deposit, withdrawal, transfer, payment
   status            String            @default("pending")
   description       String?
   metadata          Json?
@@ -108,6 +165,14 @@ model Transaction {
   receiver          User?             @relation("receiver", fields: [receiverId], references: [id])
   senderId          String?
   receiverId        String?
+  
+  // Foreign keys to Deposit/Withdrawal (these are the owning sides)
+  depositId         String?           @unique
+  deposit           Deposit?          @relation("DepositTransaction", fields: [depositId], references: [id])
+  
+  withdrawalId      String?           @unique
+  withdrawal        Withdrawal?       @relation("WithdrawalTransaction", fields: [withdrawalId], references: [id])
+  
   createdAt         DateTime          @default(now())
 
   @@index([senderWalletId])
@@ -140,6 +205,8 @@ model BankAccount {
   isDefault       Boolean           @default(false)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+
+  withdrawals     Withdrawal[]
 
   @@map("bank_accounts")
 }
