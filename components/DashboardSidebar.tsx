@@ -11,6 +11,8 @@ import {
   Settings,
   LogOut,
   Home,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from "lucide-react";
 
 interface DashboardSidebarProps {
@@ -23,6 +25,7 @@ export default function DashboardSidebar({ onLogout }: DashboardSidebarProps) {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/dashboard/wallet", label: "Wallet", icon: Wallet },
+    { href: "/dashboard/deposit", label: "Deposit", icon: ArrowDownLeft },
     { href: "/dashboard/transfer", label: "Send Money", icon: Send },
     { href: "/dashboard/transactions", label: "Transactions", icon: Receipt },
     { href: "/dashboard/profile", label: "Profile", icon: User },
